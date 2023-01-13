@@ -2,9 +2,13 @@
  * query selector
  */
 const addTodo = document.querySelector(".task-input input"),
+    addPressed = document.querySelector(".task-input button"),
+    addValue = document.querySelector(".inputValue"),
     filters = document.querySelectorAll(".filters span"),
     clearCompleted = document.querySelector(".clear-btn"),
-    taskBox = document.querySelector(".task-box");
+    taskBox = document.querySelector(".task-box"),
+    checkedAll = document.querySelector(".checkAll");
+
 /**
  * variable
  */
@@ -28,17 +32,17 @@ function showTodo(filter) {
     let liTag = "";
     if (todos) {
         todos.forEach((todo, id) => {
-            let completed = todo.status == "completed" ? "checked" : "";
+            let completed = todo.status == "completed" ? "line-through checked" : "";
             if (filter == todo.status || filter == "all") {
                 liTag += `         
-                        <li class="task">                    
+                        <li class="task mt-4 p-4 ... bg-slate-100 grid grid-cols-4">                    
                             <input onclick="updateStatus(this)" type="checkbox" id="${id}" ${completed}>                                
-                            <span ondblclick="editTodo(event)" class = "${completed} ">${todo.name}</span>
+                            <span ondblclick="editTodo(event)" class = "${completed} ml-2">${todo.name}</span>
                             <form onsubmit="updateTodo(event, ${todo.id})"> 
-                            <input type="text" value="${todo.name}" style="display: none;" id="${id}" onkeydown onblur="checkBlur(event)">              
+                            <input type="text" class = "m-1 ... p-1 ... w-full hover:bg-white focus:outline-none focus:ring focus:ring-white" value="${todo.name}" style="display: none;" id="${id}" onkeydown onblur="checkBlur(event)">              
                             </form>
-                        <div class="settings">
-                            <i onclick='deleteTodo(${id}, "${filter}")' class="uil uil-trash"></i>
+                        <div>
+                            <i onclick='deleteTodo(${id}, "${filter}")' class="uil uil-trash flex"></i>
                         </div>
                         </li>
                         `;
@@ -59,6 +63,9 @@ remainingCount();
 function checkBlur(el) {
     el.target.style.display = "none";
     el.target.parentElement.parentElement.children[1].style.display = "block";
+    el.target.parentElement.parentElement.children[0].style.display = "block";
+    el.target.parentElement.parentElement.children[3].children[0].style.display = "block";
+    el.target.parentElement.parentElement.children[3].children[0].classList.add("items-end");
 }
 /**
  * remaining count
@@ -77,15 +84,29 @@ function remainingCount() {
  */
 function updateStatus(selectedTask) {
     if (selectedTask.checked) {
-        selectedTask.parentElement.children[1].classList.add("checked");
+        selectedTask.parentElement.children[1].classList.add("line-through");
         todos[selectedTask.id].status = "completed";
     } else {
-        selectedTask.parentElement.children[1].classList.remove("checked");
+        selectedTask.parentElement.children[1].classList.remove("line-through");
         todos[selectedTask.id].status = "pending";
     }
     localStorage.setItem("todo-list", JSON.stringify(todos));
     remainingCount();
 }
+/**
+ * Check All function
+ */
+checkedAll.addEventListener("click",(e) => {
+    todos.forEach( (todo) => {
+        todo.status = "completed";
+    });
+    localStorage.setItem("todo-list", JSON.stringify(todos));
+    remainingCount();
+    showTodo("all");
+    for(let index=0; index < todos.length; index++){
+        e.target.parentElement.parentElement.children[3].children[index].children[1].classList.add("line-through");
+    }
+})
 /**
  * edit todo item
  * @param {*} e 
@@ -94,7 +115,10 @@ function editTodo(e) {
     e.preventDefault();
     escElement = e;
     e.target.style.display = "none";
+    e.target.parentElement.children[0].style.display = "none";
+    e.target.parentElement.children[2].children[0].classList.add("w-full");
     e.target.parentElement.children[2].children[0].style.display = "block";
+    e.target.parentElement.children[3].children[0].style.display = "none";
     const input = e.target.parentElement.children[2].children[0];
     input.setSelectionRange(0, 0);
     input.focus();
@@ -131,6 +155,8 @@ document.onkeydown = function (evt) {
         isEscape = (evt.keyCode === 27);
     }
     if (isEscape) {
+        escElement.target.parentElement.children[0].style.display = "block";
+        escElement.target.parentElement.children[3].children[0].style.display = "block";
         escElement.target.parentElement.children[2].children[0].style.display = "none";
         escElement.target.style.display = "block";
     }
@@ -172,3 +198,19 @@ addTodo.addEventListener("keyup", e => {
     remainingCount();
 }
 );
+/**
+ * Add todo by pressing add btn
+ */
+addPressed.addEventListener("click" ,() => {
+    let userTask = addTodo.value.trim();
+    if (userTask) {
+        let taskInfo = { id: todos.length > 0 ? todos[todos.length - 1].id + 1 : 0, name: userTask, status: "pending", isEdit: "false" };
+        todos.push(taskInfo);
+        addValue.value = "";
+        localStorage.setItem("todo-list", JSON.stringify(todos));
+        showTodo("all");
+    }else{
+        alert("Please enter words.Not space.")
+    }
+    remainingCount();
+})
